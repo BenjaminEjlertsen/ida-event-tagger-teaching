@@ -56,3 +56,8 @@ class EvaluationRequest(BaseModel):
     """Request model for evaluating tagging performance"""
     test_events: List[Dict[str, Any]] = Field(..., description="Arrangements with expected tags")
     evaluation_metrics: List[str] = Field(["accuracy", "precision", "recall"], description="Metrics to calculate")
+
+
+class SendSubmissionRequest(BaseModel):
+    name: str
+    csv_path: Optional[str] = None

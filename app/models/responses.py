@@ -89,3 +89,33 @@ class EvaluationResponse(BaseModel):
     most_confused_tags: Dict[str, int] = {}
     best_performing_categories: List[str] = []
     worst_performing_categories: List[str] = []
+
+class EnrichedEvaluationMetricsModel(BaseModel):
+    accuracy_at_1: float
+    accuracy_at_2: float
+    accuracy_at_3: float
+    weighted_accuracy: float
+    exact_match_at_2: float
+    exact_match_at_3: float
+    precision: float
+    recall: float
+    f1_score: float
+    average_confidence: float
+    total_predictions: int
+    correct_predictions: int
+    model_used: Optional[str] = None
+    total_participant_processing_time_ms: Optional[float] = None # Changed to float for safety
+    average_participant_processing_time_ms: Optional[float] = None # Changed to float
+    total_participant_cost_dkk: Optional[float] = None
+    total_participant_tokens_used: Optional[float] = None # Changed to float
+    dashboard_evaluation_time_ms: Optional[float] = None # Changed to float
+
+class DashboardParticipant(BaseModel):
+    id: str
+    name: str
+    submittedAt: str # This is an ISO string, consider parsing to datetime if needed
+    metrics: EnrichedEvaluationMetricsModel
+
+class DashboardResponse(BaseModel):
+    success: bool
+    participant: DashboardParticipant

@@ -1,18 +1,15 @@
-# eval_dataset.py
-
 import asyncio
 import time
 import uuid
 from collections import defaultdict
 from datetime import datetime
-from typing import List, Dict, Optional
+from typing import List, Dict, Optional, Any
 import logging
 from pathlib import Path
 from ..config import settings
 import csv
+import httpx
 
-# Adjust these imports to match your project’s structure:
-from app.services.initialization import evaluation_data, load_evaluation_data
 from app.services.event_processor import process_single_event
 from app.models.requests import EventTagRequest
 
@@ -31,8 +28,7 @@ async def evaluate_all() -> EvaluationResponse:
     and return one EvaluationResponse.
     """
     # 1) Ensure evaluation_data is loaded
-    if not evaluation_data:
-        load_evaluation_data()
+    evaluation_data = load_evaluation_data("arrangementer_til_tagging_val_set.csv", True)
     if not evaluation_data:
         # If loading still yields no data, we raise an error
         raise RuntimeError("No evaluation data available after load_evaluation_data()")
@@ -286,7 +282,79 @@ async def evaluate_all() -> EvaluationResponse:
         worst_performing_categories=worst_performing_categories
     )
 
-def load_evaluation_data():
+async def send_all_predictions(participant_name: str) -> Dict[str, Any]:
+    # 1) Load the CSV
+    evaluation_data = load_evaluation_data("arrangementer_til_tagging_test_set.csv", False)
+    if not evaluation_data:
+        raise RuntimeError("No input data available to predict.")
+
+    # 2) Build predictions dict
+    predictions: Dict[str, Dict[str, Any]] = {}
+    total = len(evaluation_data)
+    idx = 0
+
+    for item in evaluation_data:
+        idx += 1
+        arr = item["arrangement"]  # ignore ground_truth_tags here
+
+        # Build the EventTagRequest exactly as in evaluate_all
+        req = EventTagRequest(
+            arrangement_nummer=arr.get("arrangement_nummer"),
+            arrangement_titel=arr.get("arrangement_titel", ""),
+            arrangør=arr.get("arrangør", ""),
+            nc_teaser=arr.get("nc_teaser", ""),
+            nc_beskrivelse=arr.get("nc_beskrivelse", ""),
+            beskrivelse_html_fri=arr.get("beskrivelse_html_fri", "")
+        )
+
+        try:
+            resp = await process_single_event(req)
+            tri = resp.tag_triple
+            predictions[arr["arrangement_nummer"]] = {
+                "tag1":    tri.tag1 or "",
+                "tag2":    tri.tag2 or "",
+                "tag3":    tri.tag3 or "",
+                "confidence": tri.confidence,
+                "reasoning":  tri.reasoning or "",
+                "participant_processing_time_ms": resp.processing_time_ms,
+                "participant_tokens_used": resp.tokens_used,
+                "participant_cost_dkk": resp.cost_dkk
+            }
+        except Exception as e:
+            logger.warning(f"[{idx}/{total}] Prediction failed for {arr['arrangement_nummer']}: {e}")
+            predictions[arr["arrangement_nummer"]] = {
+                "tag1": "",
+                "tag2": "",
+                "tag3": "",
+                "confidence": 0.0,
+                "reasoning": f"Error: {e}"
+            }
+
+        if idx % 50 == 0:
+            logger.info(f"Generated {idx}/{total} predictions…")
+
+    # 3) Send to dashboard
+    dashboard_base = settings.dashboard_url.rstrip("/")
+    submit_url = f"{dashboard_base}/api/submit"
+
+    payload = {
+        "name":        participant_name,
+        "model_used": settings.openai_model,
+        "predictions": predictions
+    }
+
+    logger.info(f"PAYLOAD SUBMITTED: {payload}")
+
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        r = await client.post(submit_url, json=payload)
+
+    if r.status_code != 200:
+        detail = r.json() if r.headers.get("content-type", "").startswith("application/json") else r.text
+        raise RuntimeError(f"Dashboard returned {r.status_code}: {detail}")
+
+    return r.json()
+
+def load_evaluation_data(file_name: str, read_ground_truth: bool):
     """
     Load evaluation data with ground truth tags from arrangement.csv
     """
@@ -294,7 +362,7 @@ def load_evaluation_data():
     
     try:
         # Load evaluation data from arrangement.csv
-        eval_file = Path(settings.data_dir) / "arrangementer_til_tagging_test_set.csv"
+        eval_file = Path(settings.data_dir) / file_name
         logger.info(f"Looking for evaluation file: {eval_file}")
         
         evaluation_data = []
@@ -325,31 +393,39 @@ def load_evaluation_data():
                             'arrangement_undertype': row.get('ArrangementUndertype', '').strip()
                         }
 
-                        # Build ground_truth_tags from Underkategori1/2/3
-                        ground_truth_tags = []
-                        for j in range(1, 4):
-                            tag_col = f"Underkategori{j}"
-                            raw_val = row.get(tag_col, "") or ""
-                            tag_value = raw_val.strip()
-                            if tag_value:
-                                tag_normalized = (
-                                    tag_value.replace(' ', '_')
-                                            .replace('/', '_')
-                                            .replace('-', '_')
-                                            .upper()
-                                )
-                                ground_truth_tags.append({
-                                    'tag': tag_normalized,
-                                    'priority': j,
-                                    'original_value': tag_value
+                        if read_ground_truth:
+
+                            # Build ground_truth_tags from Underkategori1/2/3
+                            ground_truth_tags = []
+                            for j in range(1, 4):
+                                tag_col = f"Underkategori{j}"
+                                raw_val = row.get(tag_col, "") or ""
+                                tag_value = raw_val.strip()
+                                if tag_value:
+                                    tag_normalized = (
+                                        tag_value.replace(' ', '_')
+                                                .replace('/', '_')
+                                                .replace('-', '_')
+                                                .upper()
+                                    )
+                                    ground_truth_tags.append({
+                                        'tag': tag_normalized,
+                                        'priority': j,
+                                        'original_value': tag_value
+                                    })
+
+                            # Only keep rows that have a nonempty title AND at least one tag
+                            if arrangement_data['arrangement_titel'] and ground_truth_tags:
+                                evaluation_data.append({
+                                    'arrangement': arrangement_data,
+                                    'ground_truth_tags': ground_truth_tags
                                 })
 
-                        # Only keep rows that have a nonempty title AND at least one tag
-                        if arrangement_data['arrangement_titel'] and ground_truth_tags:
-                            evaluation_data.append({
-                                'arrangement': arrangement_data,
-                                'ground_truth_tags': ground_truth_tags
-                            })
+                        else:
+                            if arrangement_data['arrangement_titel']:
+                                evaluation_data.append({
+                                    'arrangement': arrangement_data
+                                })
 
                     except Exception as e:
                         logger.warning(f"Error processing evaluation row {i}: {e}")
@@ -359,7 +435,8 @@ def load_evaluation_data():
                 if evaluation_data:
                     sample = evaluation_data[0]
                     logger.info(f"Sample title: {sample['arrangement']['arrangement_titel']}")
-                    logger.info(f"Sample tags: {sample['ground_truth_tags']}")
+                    if read_ground_truth:
+                        logger.info(f"Sample tags: {sample['ground_truth_tags']}")
 
                     return evaluation_data
         else:

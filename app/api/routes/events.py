@@ -5,10 +5,9 @@ from fastapi.responses import StreamingResponse
 import json
 import time
 
-from ...models.requests import EventTagRequest, BatchTagRequest, EvaluationRequest
-from ...models.responses import EventTagResponse, BatchTagResponse, EvaluationResponse
-from app.services.initialization import evaluation_data, load_evaluation_data
-from app.services.evaluation import evaluate_all
+from ...models.requests import EventTagRequest, BatchTagRequest, EvaluationRequest, SendSubmissionRequest
+from ...models.responses import EventTagResponse, BatchTagResponse, EvaluationResponse, DashboardResponse
+from app.services.evaluation import evaluate_all, send_all_predictions
 from ...services.event_processor import (
     process_single_event, 
     process_batch_events
@@ -240,4 +239,34 @@ async def get_processing_stats():
         
     except Exception as e:
         logger.error(f"Error getting stats: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.post("/events/send_submission", response_model=DashboardResponse)
+async def send_submission(request: SendSubmissionRequest):
+    """
+    Endpoint to generate predictions for all events (no ground truth)
+    and send them in one payload to the dashboard.
+    """
+    try:
+        logger.info("Starting send_submission for participant '%s'...", request.name)
+        start = time.time()
+
+        dashboard_resp = await send_all_predictions(request.name)
+        dashboard_data = DashboardResponse(**dashboard_resp)
+
+        elapsed = (time.time() - start) * 1000
+        logger.info("send_submission completed in %.0f ms", elapsed)
+
+        if dashboard_data.success == True:
+            print("Full participant metrics:")
+            for key, value in dashboard_data.participant.metrics.model_dump().items():
+                print(f"  {key}: {value}")
+
+        return dashboard_resp
+
+    except RuntimeError as re:
+        # e.g. “No input data available” or dashboard HTTP error
+        raise HTTPException(status_code=400, detail=str(re))
+    except Exception as e:
+        logger.error("Unexpected error in send_submission: %s", e, exc_info=True)
         raise HTTPException(status_code=500, detail=str(e))

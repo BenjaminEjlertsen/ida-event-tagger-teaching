@@ -24,7 +24,6 @@ human_review_checker: HumanReviewChecker = None
 # Global data
 available_tags: Dict[str, dict] = {}
 tag_rules: List[dict] = []
-evaluation_data: List = [] 
 
 async def initialize_services():
     """
@@ -39,9 +38,6 @@ async def initialize_services():
         # Load tag rules and data first
         await load_tag_data()
         logger.info(f"Loaded {len(available_tags)} tags")
-
-        logger.info("Loading evaluation data...")
-        await load_evaluation_data()
         
         # Initialize each service component with error handling
         logger.info("Initializing InputValidator...")
@@ -199,85 +195,3 @@ async def load_tag_data():
             }
         }
         tag_rules = []
-
-async def load_evaluation_data():
-    """
-    Load evaluation data with ground truth tags from arrangement.csv
-    """
-    global evaluation_data
-    
-    try:
-        # Load evaluation data from arrangement.csv
-        eval_file = Path(settings.data_dir) / "arrangementer_til_tagging.csv"
-        logger.info(f"Looking for evaluation file: {eval_file}")
-        
-        evaluation_data = []
-        
-        if eval_file.exists():
-            logger.info(f"Found evaluation file, reading with UTF-8 encoding...")
-            with open(eval_file, 'r', encoding='utf-8') as f:
-                # 1) Read the first line to detect delimiter
-                first_line = f.readline().rstrip("\n")
-                logger.info(f"First line of CSV: {repr(first_line)}")
-                delimiter = ';' if ';' in first_line else ','
-                logger.info(f"Detected delimiter: {repr(delimiter)}")
-
-                # 2) Rewind and create a single DictReader
-                f.seek(0)
-                reader = csv.DictReader(f, delimiter=delimiter)
-                logger.info(f"Reader.fieldnames: {reader.fieldnames}")
-
-                for i, row in enumerate(reader):
-                    try:
-                        # Extract arrangement data using the exact column names:
-                        arrangement_data = {
-                            'arrangement_nummer': row.get('ArrangementNummer', '').strip(),
-                            'arrangement_titel': row.get('ArrangementTitel', '').strip(),
-                            'arrangør': row.get('arrangør', '').strip(),
-                            'nc_teaser': row.get('nc_Teaser', '').strip(),
-                            'nc_beskrivelse': row.get('CleanText', '').strip(),
-                            'arrangement_undertype': row.get('ArrangementUndertype', '').strip()
-                        }
-
-                        # Build ground_truth_tags from Underkategori1/2/3
-                        ground_truth_tags = []
-                        for j in range(1, 4):
-                            tag_col = f"Underkategori{j}"
-                            raw_val = row.get(tag_col, "") or ""
-                            tag_value = raw_val.strip()
-                            if tag_value:
-                                tag_normalized = (
-                                    tag_value.replace(' ', '_')
-                                            .replace('/', '_')
-                                            .replace('-', '_')
-                                            .upper()
-                                )
-                                ground_truth_tags.append({
-                                    'tag': tag_normalized,
-                                    'priority': j,
-                                    'original_value': tag_value
-                                })
-
-                        # Only keep rows that have a nonempty title AND at least one tag
-                        if arrangement_data['arrangement_titel'] and ground_truth_tags:
-                            evaluation_data.append({
-                                'arrangement': arrangement_data,
-                                'ground_truth_tags': ground_truth_tags
-                            })
-
-                    except Exception as e:
-                        logger.warning(f"Error processing evaluation row {i}: {e}")
-                        continue
-
-                logger.info(f"Loaded {len(evaluation_data)} arrangements for evaluation")
-                if evaluation_data:
-                    sample = evaluation_data[0]
-                    logger.info(f"Sample title: {sample['arrangement']['arrangement_titel']}")
-                    logger.info(f"Sample tags: {sample['ground_truth_tags']}")
-        else:
-            logger.warning(f"Evaluation file not found: {eval_file}")
-            
-    except Exception as e:
-        logger.error(f"Error loading evaluation data: {e}")
-        logger.exception("Full traceback:")
-        evaluation_data = []

@@ -11,6 +11,7 @@ class Settings(BaseSettings):
     host: str = Field(default="0.0.0.0", env="HOST")
     port: int = Field(default=8000, env="PORT")
     debug: bool = Field(default=False, env="DEBUG")
+    dashboard_url: str = Field(default="", env="DASHBOARD_URL")
     
     # OpenAI configuration
     openai_api_key: str = Field(default="your_openai_api_key_here", env="OPENAI_API_KEY")
