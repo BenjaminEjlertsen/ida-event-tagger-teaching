@@ -32,6 +32,9 @@ class OutputParser:
     ) -> ParsedTagResponse:
         """
         TODO Parse LLM response into structured format that supports the ParsedTagReponse
+
+        OBS: Systemet forventer takes i all caps og _
+        Fx skal "Programmering og softwareudvkling" outputtes som "PROGRAMMERING_OG_SOFTWAREUDVIKLING"
         """
         try:
             tags_to_use = available_tags or self.available_tags
