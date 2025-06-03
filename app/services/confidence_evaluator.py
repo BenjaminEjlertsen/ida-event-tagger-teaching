@@ -30,7 +30,7 @@ class ConfidenceEvaluator:
     ) -> ConfidenceScores:
         """
         Evaluate confidence in tag assignments
-        TODO Task 5: Implement confidence evaluation
+        TODO Here you could have some sort of altering of confidence
         """
         # Basic implementation - improve this
         base_confidence = parsed_tags.confidence

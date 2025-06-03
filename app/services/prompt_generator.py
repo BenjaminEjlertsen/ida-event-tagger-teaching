@@ -12,13 +12,13 @@ class PromptResponse(BaseModel):
 
 class PromptGenerator:
     """
-    Service for generating prompts for OpenAI - Danish version
+    Service for generating prompts for OpenAI
     """
     
     def __init__(self, available_tags: Dict = None, tag_rules: List = None):
         self.available_tags = available_tags or {}
         self.tag_rules = tag_rules or []
-        logger.info(f"PromptGenerator initialized with {len(self.available_tags)} Danish tags")
+        logger.info(f"PromptGenerator initialized with {len(self.available_tags)} tags")
     
     async def generate_tagging_prompt(
         self, 
@@ -26,7 +26,7 @@ class PromptGenerator:
         custom_prompt: str = None
     ) -> PromptResponse:
         """
-        Generate tagging prompt for a Danish arrangement
+        Generate tagging prompt for a arrangement
         TODO Task 2: Implement prompt generation logic
         """
         if custom_prompt:
@@ -40,11 +40,12 @@ class PromptGenerator:
         for tag_key, tag_info in self.available_tags.items():
             display_name = tag_info.get('display_name', tag_key)
             description = tag_info.get('description', '')
-            examples = tag_info.get('examples', [])
+            tag_navn = tag_info.get('underkategori', '').upper()
+            #examples = tag_info.get('examples', [])
             
-            category_desc = f"- {display_name}: {description}"
-            if examples:
-                category_desc += f" (Eksempler: {', '.join(examples[:3])})"
+            category_desc = f"Tag navn:{tag_navn}. Beskrivelse af tag: {description}"
+            #if examples:
+            #    category_desc += f" (Eksempler: {', '.join(examples[:3])})"
             categories_text.append(category_desc)
         
         # Get the best description from available fields
@@ -58,25 +59,71 @@ class PromptGenerator:
         
         description_text = "\n".join(description_parts) if description_parts else "Ingen beskrivelse tilgængelig"
         
-        # Danish prompt
-        prompt = f"""
-Du er en ekspert i at kategorisere danske arrangementer og events.
+        categories_text_str = "\n".join(categories_text)
 
-Arrangement der skal kategoriseres:
+        prompt = f"""
+Du er en ekspert i at tagge danske arrangementer og events.
+
+Arrangement der skal tagges:
 Titel: {arrangement.arrangement_titel}
 Arrangør: {arrangement.arrangør or 'Ikke angivet'}
 Type: {arrangement.arrangement_undertype or 'Ikke angivet'}
 {description_text}
 
-Tilgængelige kategorier:
-{chr(10).join(categories_text)}
+Tilgængelige tags:
+{categories_text_str}
 
-Bestem den mest passende kategori for dette arrangement.
+Bestem de mest passende tags for dette arrangement. Minimum 1 tag og maximum 3 tags.
 
-Svar med følgende format:
-PRIMARY_TAG: [kategori_navn]
-CONFIDENCE: [score fra 0.0 til 1.0]
-REASONING: [kort forklaring på dansk]
+Tags always use _ instead of whitespace.
+
+Svade udelukkende i følgende format, og output empty string hvis ingen tags for tag2 og tag3:
+
+{{
+  "TAG1": "navn_på_tag1",
+  "TAG2": "navn_på_tag2",
+  "TAG3": "navn_på_tag3"
+  "CONFIDENCE": x,
+  "REASONING": "reason"
+}}
+
+Eksempel:
+
+Input: Du er en ekspert i at tagge danske arrangementer og events.
+
+Arrangement der skal tagges:
+Titel: "Arrangement A"
+Arrangør: Arrangør X
+Type: Y
+Dette arrangement er et eksempel arrangement.
+
+Tilgængelige tags:
+kategori x
+kategori y
+kategori
+
+Bestem de mest passende tags for dette arrangement. Minimum 1 tag og maximum 3 tags.
+
+Tags always use _ instead of whitespace.
+
+Svade udelukkende i følgende format, og output empty string hvis ingen tags for tag2 og tag3:
+
+{{
+  "TAG1": "navn_på_tag1",
+  "TAG2": "navn_på_tag2",
+  "TAG3": "navn_på_tag3"
+  "CONFIDENCE": x,
+  "REASONING": "reason"
+}}
+
+Output:
+{{
+  "TAG1": "navn_på_tag1",
+  "TAG2": "navn_på_tag2",
+  "TAG3": ""
+  "CONFIDENCE": x,
+  "REASONING": "reason"
+}}
         """
         
         return PromptResponse(

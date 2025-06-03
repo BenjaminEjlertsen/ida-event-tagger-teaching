@@ -14,20 +14,19 @@ class SensitivityCheckResult(BaseModel):
 
 class InputValidator:
     """
-    Service for validating and cleaning Danish arrangement data
+    Service for validating and cleaning arrangement data
     """
     
     def __init__(self):
         self.sensitive_keywords = [
-            # Danish sensitive keywords
+            # sensitive keywords
             "klassificeret", "hemmeligt", "fortroligt", "privat", 
             "personfølsomme", "gdpr", "databeskyttelse"
         ]
     
     async def validate_and_clean(self, arrangement: EventTagRequest) -> EventTagRequest:
         """
-        Validate and clean Danish arrangement data
-        TODO Task 1: Implement validation logic
+        Validate and clean arrangement data
         """
         logger.info(f"Validating arrangement: {arrangement.arrangement_titel[:50]}...")
         

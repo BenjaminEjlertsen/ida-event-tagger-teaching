@@ -1,9 +1,3 @@
-# app/config.py
-"""
-Application configuration
-TODO Task 1: Students implement configuration management
-"""
-
 import os
 from pathlib import Path
 from typing import Optional, List, Union

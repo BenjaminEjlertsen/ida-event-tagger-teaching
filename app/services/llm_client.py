@@ -17,7 +17,7 @@ class LLMClient:
     Service for calling OpenAI API
     """
     
-    def __init__(self, api_key: str, model: str = "gpt-4"):
+    def __init__(self, api_key: str, model: str = "gpt-4o"):
         # TODO Task 3: Implement OpenAI client setup
         self.client = openai.OpenAI(api_key=api_key)
         self.model = model

@@ -9,7 +9,7 @@ class ProcessingMode(str, Enum):
     STREAM = "stream"
 
 class EventTagRequest(BaseModel):
-    """Request model for tagging a Danish arrangement - supports both Danish and ASCII field names"""
+    """Request model for tagging an event - supports both Danish and ASCII field names"""
     arrangement_nummer: Optional[str] = Field(None, description="ArrangementNummer")
     arrangement_titel: str = Field(..., description="ArrangementTitel", min_length=1, max_length=500)
     

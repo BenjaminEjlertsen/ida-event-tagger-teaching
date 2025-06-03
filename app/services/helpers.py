@@ -14,7 +14,7 @@ def estimate_cost(tokens_used: int) -> float:
     return (tokens_used / 1000) * cost_per_1k_tokens
 
 def format_event_for_processing(arrangement: EventTagRequest) -> str:
-    """Format Danish arrangement data for LLM processing"""
+    """Format arrangement data for LLM processing"""
     # Build description from available fields
     description_parts = []
     
@@ -28,7 +28,7 @@ def format_event_for_processing(arrangement: EventTagRequest) -> str:
     
     description_text = "\n".join(description_parts) if description_parts else "Ingen beskrivelse tilgængelig"
     
-    # Get organizer (supports both Danish and ASCII)
+    # Get organizer
     organizer = arrangement.arrangør or "Ikke angivet"
     
     return f"""
@@ -37,8 +37,3 @@ def format_event_for_processing(arrangement: EventTagRequest) -> str:
     Type: {arrangement.arrangement_undertype or 'Ikke angivet'}
     {description_text}
     """
-
-async def stream_response(data: Dict[str, Any]):
-    """Stream response data (for future streaming implementation)"""
-    # TODO: Implement streaming logic
-    yield data
