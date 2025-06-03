@@ -20,7 +20,7 @@ class LLMClient:
     
     def __init__(self, api_key: str, model: str = "gpt-4o"):
         # TODO Implement OpenAI client setup
-
+        self.model = "PUT ACTUAL OPENAI MODEL HERE"
         logger.info(f"Initialized LLM client with model: {model}")
     
     async def get_tags(
