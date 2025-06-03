@@ -31,16 +31,35 @@ class OutputParser:
         available_tags: List[str] = None
     ) -> ParsedTagResponse:
         """
-        TODO Parse LLM response into structured format that supports the ParsedTagReponse
+        Parse LLM response into structured format (tag1, tag2, tag3)
         """
         try:
             tags_to_use = available_tags or self.available_tags
-            
-            tag1 = "PROGRAMMERING_OG_SOFTWAREUDVIKLING"
-            tag2 = ""
-            tag3 = ""
-            confidence = -1
-            reasoning = "Bare fordi"
+            text = llm_output.strip()
+            data = json.loads(text)  # Expect JSON with keys "TAG1", "TAG2", "TAG3", "CONFIDENCE", "REASONING"
+
+            # Extract the three tags
+            tag1 = data.get("TAG1")
+            tag2 = data.get("TAG2")
+            tag3 = data.get("TAG3")
+
+            confidence = data.get("CONFIDENCE")
+            reasoning = data.get("REASONING")
+
+            # Validate that at least tag1 is nonempty and within available_tags (if you want to enforce that)
+            if not tag1:
+                return ParsedTagResponse(
+                    is_valid=False,
+                    error="No valid tag1 found in response"
+                )
+
+            # Optionally check that each tagX is one of the allowed tags_to_use:
+            for idx, t in enumerate((tag1, tag2, tag3), start=1):
+                if t and t.upper() not in tags_to_use:
+                    return ParsedTagResponse(
+                        is_valid=False,
+                        error=f"TAG{idx} = '{t}' is not in available_tags"
+                    )
 
             return ParsedTagResponse(
                 tag1=tag1.upper() if tag1 else None,

@@ -28,7 +28,18 @@ class HumanReviewChecker:
     ) -> ReviewCheckResult:
         """
         Determine if human review is needed
-        TODO Implement logic that decided whether or not human review is needed
         """
-
+        # Basic implementation
+        if confidence_scores.primary_confidence < self.review_threshold:
+            return ReviewCheckResult(
+                needs_review=True,
+                reason=f"Low confidence: {confidence_scores.primary_confidence:.2f}"
+            )
+        
+        if not parsed_tags.is_valid:
+            return ReviewCheckResult(
+                needs_review=True,
+                reason="Invalid AI response"
+            )
+        
         return ReviewCheckResult(needs_review=False)

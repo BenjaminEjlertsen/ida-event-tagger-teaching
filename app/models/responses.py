@@ -17,14 +17,14 @@ class TagTriple(BaseModel):
     reasoning: Optional[str] = None
 
 class EventTagResponse(BaseModel):
-    """Response model for single arrangement tagging"""
+    """Response model for single event tagging"""
     event_id: str
     status: ProcessingStatus
     tag_triple: Optional[TagTriple] = None
     reasoning: Optional[str] = None
     processing_time_ms: Optional[float] = None
     tokens_used: Optional[int] = None
-    cost_usd: Optional[float] = None
+    cost_dkk: Optional[float] = None
     error_message: Optional[str] = None
     needs_human_review: bool = False
     timestamp: datetime = datetime.now()
@@ -39,7 +39,7 @@ class BatchTagSummary(BaseModel):
     average_confidence: float
 
 class BatchTagResponse(BaseModel):
-    """Response model for batch arrangement tagging"""
+    """Response model for batch event tagging"""
     batch_id: str
     status: ProcessingStatus
     results: List[EventTagResponse]

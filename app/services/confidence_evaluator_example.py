@@ -32,8 +32,16 @@ class ConfidenceEvaluator:
         Evaluate confidence in tag assignments
         TODO Here you could have some sort of altering of confidence
         """
+        # Basic implementation
+        base_confidence = parsed_tags.confidence
         
-        final_confidence = parsed_tags.confidence
+        if llm_response.finish_reason == "stop":
+            base_confidence += 0.05
+        
+        if len(parsed_tags.reasoning or "") > 30:
+            base_confidence += 0.05
+        
+        final_confidence = min(1.0, max(0.0, base_confidence))
         
         return ConfidenceScores(
             primary_confidence=final_confidence,

@@ -37,7 +37,7 @@ async def process_single_event(request: EventTagRequest) -> EventTagResponse:
         validated_request = await input_validator.validate_and_clean(request)
         logger.info(f"Arrangement validation completed for {event_id}")
         
-        # Step 1.5: Check for sensitive content (new step)
+        # Step 1.5: Check for sensitive content
         sensitivity_check = await input_validator.check_sensitive_content(validated_request)
         if sensitivity_check.contains_sensitive_content:
             logger.warning(f"Sensitive content detected in arrangement {event_id}: {sensitivity_check.reason}")
@@ -50,8 +50,7 @@ async def process_single_event(request: EventTagRequest) -> EventTagResponse:
         
         # Step 2: Generate tagging prompt
         prompt_response = await prompt_generator.generate_tagging_prompt(
-            validated_request, 
-            custom_prompt=validated_request.custom_prompt if hasattr(validated_request, 'custom_prompt') else None
+            validated_request
         )
         logger.info(f"Generated prompt for event {event_id}")
         
@@ -110,7 +109,7 @@ async def process_single_event(request: EventTagRequest) -> EventTagResponse:
             reasoning=tag_triple.reasoning,
             processing_time_ms=processing_time_ms,
             tokens_used=llm_response.tokens_used,
-            cost_usd=estimated_cost
+            cost_dkk=estimated_cost
         )
         
         logger.info(f"Successfully processed event {event_id} in {processing_time_ms:.2f}ms")
@@ -139,20 +138,11 @@ async def process_batch_events(request: BatchTagRequest) -> BatchTagResponse:
     results = []
     batch_id = str(uuid.uuid4())
     
-    # Process each event
-    for i, event_request in enumerate(request.events):
-        logger.info(f"Processing arrangement {i+1}/{len(request.events)}")
-        try:
-            result = await process_single_event(event_request)
-            results.append(result)
-        except Exception as e:
-            logger.error(f"Error in batch processing arrangement {i}: {e}")
-            results.append(EventTagResponse(
-                event_id=event_request.arrangement_nummer or f"batch_{i}",
-                status=ProcessingStatus.ERROR,
-                error_message=str(e),
-                needs_human_review=True
-            ))
+    """
+    
+    Process all event
+
+    """
     
     # Calculate summary statistics
     successful = sum(1 for r in results if r.status == ProcessingStatus.SUCCESS)

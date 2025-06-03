@@ -25,7 +25,6 @@ class EventTagRequest(BaseModel):
     # Processing options
     include_reasoning: bool = Field(True, description="Include reasoning in response")
     require_confidence: bool = Field(True, description="Include confidence scores")
-    custom_prompt: Optional[str] = Field(None, description="Custom prompt override")
     
     @field_validator('arrangement_titel')
     @classmethod

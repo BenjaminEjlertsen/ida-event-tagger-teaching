@@ -181,12 +181,12 @@ async def load_tag_data():
                     except Exception as e:
                         logger.error(f"Error processing row {i}: {e}, row data: {rule}")
             
-            logger.info(f"Successfully loaded {len(available_tags)} Danish tags from {rules_file}")
+            logger.info(f"Successfully loaded {len(available_tags)} tags from {rules_file}")
             
         logger.info(f"Final available tags: {list(available_tags.keys())}")
             
     except Exception as e:
-        logger.error(f"Error loading Danish tag data: {e}")
+        logger.error(f"Error loading tag data: {e}")
         logger.exception("Full traceback:")
         # Create minimal fallback
         available_tags = {

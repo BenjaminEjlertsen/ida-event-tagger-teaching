@@ -165,13 +165,6 @@ async def debug_arrangement_request(request: dict):
 
 @router.post("/events/tag", response_model=EventTagResponse)
 async def tag_single_event(request: EventTagRequest):
-    """
-    Tag a single arrangement
-    
-    TODO Task 2: Implement basic endpoint
-    TODO Task 4: Add proper error handling
-    TODO Task 6: Add rate limiting and monitoring
-    """
     try:
         logger.info(f"Received tagging request for arrangement: {request.arrangement_titel[:50]}...")
         logger.info(f"Request data: arrangement_titel={request.arrangement_titel}, arrangør={request.arrangør}")
@@ -195,17 +188,10 @@ async def tag_batch_events(
     """
     Tag multiple events in batch
     
-    TODO Task 5: Implement batch processing
-    TODO Task 6: Add background task handling
+    TODO Implement batch processing
     """
     try:
         logger.info(f"Received batch tagging request for {len(request.events)} events")
-        
-        # For large batches, process in background
-        if len(request.events) > settings.background_processing_threshold:
-            # TODO: Implement background processing
-            # background_tasks.add_task(process_batch_in_background, request)
-            pass
         
         result = await process_batch_events(request)
         
@@ -220,8 +206,6 @@ async def tag_batch_events(
 async def get_available_tags():
     """
     Get all available tags and their descriptions
-    
-    TODO Task 1: Implement simple data endpoint
     """
     try:
         from ...services.initialization import available_tags
