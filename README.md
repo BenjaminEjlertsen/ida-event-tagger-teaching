@@ -209,8 +209,6 @@ Fx skal "Programmering og softwareudvkling" outputtes som "PROGRAMMERING_OG_SOFT
 
 ### 3.1 `input_validator.py` (stub)
 
-* **Stub‐kontrakt**:
-
   ```python
   async def validate_and_clean(request: EventTagRequest) -> EventTagRequest:
       """
@@ -222,8 +220,6 @@ Fx skal "Programmering og softwareudvkling" outputtes som "PROGRAMMERING_OG_SOFT
 ---
 
 ### 3.2 `prompt_generator.py` (stub)
-
-* **Stub‐kontrakt**:
 
   ```python
   async def generate_tagging_prompt(request: EventTagRequest) -> PromptResponse:
@@ -237,8 +233,6 @@ Fx skal "Programmering og softwareudvkling" outputtes som "PROGRAMMERING_OG_SOFT
 
 ### 3.3 `llm_client.py` (stub)
 
-* **Stub‐kontrakt**:
-
   ```python
   async def get_tags(prompt: str, temperature: float, max_tokens: int) -> LLMResponse:
       """
@@ -249,8 +243,6 @@ Fx skal "Programmering og softwareudvkling" outputtes som "PROGRAMMERING_OG_SOFT
 ---
 
 ### 3.4 `output_parser.py` (stub)
-
-* **Stub‐kontrakt**:
 
   ```python
   async def parse_tag_response(llm_output: str, available_tags: List[str]) -> ParsedTagResponse:
@@ -265,8 +257,6 @@ Fx skal "Programmering og softwareudvkling" outputtes som "PROGRAMMERING_OG_SOFT
 
 ### 3.5 `confidence_evaluator.py` (stub)
 
-* **Stub‐kontrakt**:
-
   ```python
   def calculate_confidence(parsed_tags: ParsedTagResponse) -> float:
       """
@@ -278,8 +268,6 @@ Fx skal "Programmering og softwareudvkling" outputtes som "PROGRAMMERING_OG_SOFT
 ---
 
 ### 3.6 `human_review_checker.py` (stub)
-
-* **Stub‐kontrakt**:
 
   ```python
   def needs_human_review(parsed_tags: ParsedTagResponse, confidence: float) -> bool:
