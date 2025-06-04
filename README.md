@@ -125,7 +125,7 @@ Lav eventuelt egen branch.
 
 ---
 
-    Jeg har lavet et dashboard - bare fordi det kunne være sjovt :-) I kan submit jeres score til det med nedenstående endpoint. Prøv at holde det til et minimum, da man skal validerer op mod validerings sættet, og kun en sjælden gang i mellem afprøve test sættet. (Da man ellers kan risikere bias og derved overfitting)
+Jeg har lavet et dashboard - bare fordi det kunne være sjovt :-) I kan submit jeres score til det med nedenstående endpoint. Prøv at holde det til et minimum, da man skal validerer op mod validerings sættet, og kun en sjælden gang i mellem afprøve test sættet. (Da man ellers kan risikere bias og derved overfitting)
 
    * `POST /api/v1/events/send_submission` med:
 
